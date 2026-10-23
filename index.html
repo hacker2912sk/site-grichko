@@ -5,9 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>ИСР — Индустриальный Сервер Работяг</title>
 <link id="favicon" rel="icon" type="image/png">
-<script>
-  fetch('/icon.txt').then(r=>r.text()).then(b=>{document.getElementById('favicon').href='data:image/png;base64,'+b.trim()});
-</script>
+<link rel="icon" type="image/png" href="icon.png">
 <meta name="description" content="ИСР — виртуальное государство в Discord: свои законы, ранги и круглосуточная модерация.">
 <meta name="theme-color" content="#FFFF00">
 <meta property="og:type" content="website">
@@ -26,6 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800;900&family=Oswald:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/halloween.css">
 <style>
 :root {
   --paper: #F3F0E6;
@@ -186,6 +185,11 @@ header.top, .btn, .console-panel, .settings-panel, .chgroup, .staff-card, .law-r
 .progress-track { position:fixed;top:0;left:0;right:0;height:3px;background:var(--paper-2);z-index:600; }
 .progress-fill { height:100%;width:0%;background:var(--yellow-deep);transition:width .08s linear; }
 body { padding-top: 3px; }
+/* Футер всегда прижат к низу окна: на коротких страницах или при уменьшении масштаба
+   браузера контент растягивается, а не оставляет пустоту под футером. */
+body { display:flex; flex-direction:column; min-height:100vh; min-height:100dvh; }
+body > main { flex:1 0 auto; width:100%; }
+body > footer { flex-shrink:0; }
 
 /* ===== STRIPE ===== */
 .stripe { height:9px;background:repeating-linear-gradient(135deg,var(--yellow) 0 18px,var(--ink) 18px 36px); }
@@ -1513,6 +1517,13 @@ footer { background:var(--steel);color:var(--steel-text-dim);padding:40px 24px 0
           <button class="seg-btn active" data-value="on">Включена</button>
           <button class="seg-btn" data-value="off">Выключена</button>
         </div>
+        <div id="graveyardSetting" style="display:none;">
+          <div class="sg-label" style="margin-top:16px;">Хэллоуин: кладбище и тыквы внизу</div>
+          <div class="seg-group" id="graveyardGroup">
+            <button class="seg-btn active" data-value="on">Показать</button>
+            <button class="seg-btn" data-value="off">Скрыть</button>
+          </div>
+        </div>
         <div class="sg-label" style="margin-top:20px;">Сброс</div>
         <button class="btn-danger" id="resetLayoutBtn">↩ Сбросить всё к умолчаниям</button>
       </div>
@@ -1664,11 +1675,19 @@ function t(key) {
    ICONS LOAD
 ============================================================ */
 function loadIcons(){
-  fetch('/icon.txt').then(r=>r.text()).then(b=>{
-    const src='data:image/png;base64,'+b.trim();
+  const apply = src => {
     ['logoImg','footerLogo'].forEach(id=>{ const el=document.getElementById(id); if(el) el.src=src; });
-    document.getElementById('favicon').href=src;
-  }).catch(()=>{});
+    const fav = document.getElementById('favicon');
+    if(fav) fav.href = src;
+  };
+  const img = new Image();
+  img.onload = () => apply('/icon.png');
+  img.onerror = () => {
+    fetch('/icon.txt').then(r=>r.text())
+      .then(b=>apply('data:image/png;base64,'+b.trim()))
+      .catch(()=>{});
+  };
+  img.src = '/icon.png';
 }
 loadIcons();
 
@@ -1797,6 +1816,10 @@ const BUILT_IN_THEMES = [
   { id:'rose',     name:'Роза',    font:"'Oswald', sans-serif", stripe:'on', vars:{ '--paper':'#FFF5F7','--paper-2':'#FFE8ED','--ink':'#2D1A1E','--ink-soft':'#7A4A53','--yellow':'#E8547A','--yellow-deep':'#C0395A','--steel':'#2D1A1E','--steel-2':'#3D2228','--line':'#F5C5CF','--line-strong':'#2D1A1E','--steel-text':'#FFE8ED','--steel-text-dim':'#D4A0AA' }},
   { id:'slate',    name:'Сланец',  font:"system-ui, sans-serif", stripe:'on', vars:{ '--paper':'#F8F9FA','--paper-2':'#E9ECEF','--ink':'#212529','--ink-soft':'#6C757D','--yellow':'#6C63FF','--yellow-deep':'#4B42D6','--steel':'#212529','--steel-2':'#343A40','--line':'#DEE2E6','--line-strong':'#212529','--steel-text':'#F8F9FA','--steel-text-dim':'#ADB5BD' }},
   { id:'olive',    name:'Оливка',  font:"'IBM Plex Sans', sans-serif", stripe:'on', vars:{ '--paper':'#242518','--paper-2':'#221e16','--ink':'#ffd885','--ink-soft':'#bf9c73','--yellow':'#736b35','--yellow-deep':'#927116','--steel':'#1f1f04','--steel-2':'#30311c','--line':'#473400','--line-strong':'#473d0b','--steel-text':'#806400','--steel-text-dim':'#fed57c' }},
+  /* Ивентовая тема. Цвета и декор лежат в отдельном файле css/halloween.css (cssTheme:true) —
+     JS только ставит html[data-theme="halloween"]. preview — цвета для плитки в настройках. */
+  { id:'halloween', name:'Хэллоуин 🎃', cssTheme:true, event:true, font:"'IBM Plex Sans', sans-serif", stripe:'on',
+    preview:{ paper:'#140A1E', accent:'#FF7A00', ink:'#F4E9D8' } },
   { id:'bloody',    name:'Кровь',  font:"'Oswald', sans-serif", stripe:'on', vars:{ '--paper':'#220707','--paper-2':'#610000','--ink':'#8f0000','--ink-soft':'#ff5757','--yellow':'#ff2e2e','--yellow-deep':'#ff0000','--steel':'#570000','--steel-2':'#940000','--line':'#970c0c','--line-strong':'#a80000','--steel-text':'#ff3d3d','--steel-text-dim':'#ff0000' }},
 ];
 
@@ -1830,14 +1853,33 @@ const THEME_CODE_FONTS = [
    это позволяет добавлять новые официальные темы, просто вставив код в файл в репозитории,
    без необходимости переписывать вручную все 12 цветов. */
 let EXTRA_THEMES = [];
-function allBuiltInThemes(){ return BUILT_IN_THEMES.concat(EXTRA_THEMES); }
+function allBuiltInThemes(){
+  const all = BUILT_IN_THEMES.concat(EXTRA_THEMES);
+  /* В сезон Хэллоуина тема идёт первой, вне сезона остаётся на своём месте в массиве. */
+  if(HALLOWEEN_ACTIVE){
+    const i = all.findIndex(t=>t.id===HALLOWEEN_ID);
+    if(i > 0) all.unshift(all.splice(i,1)[0]);
+  }
+  return all;
+}
+
+/* Выбранная тема из json/themesFILE на момент загрузки страницы ещё неизвестна: файл приходит
+   по сети позже, чем срабатывает initTheme. Раньше initTheme в этот момент видел «неизвестный id»,
+   сбрасывал тему на светлую/тёмную и перезаписывал isr-theme-id в localStorage — цвета терялись,
+   а фигуры фона (лежат в своём ключе) оставались. Теперь id не трогаем, пока файл не загрузится. */
+function settlePendingExtraTheme(){
+  if(!pendingExtraThemeId) return;
+  const id = pendingExtraThemeId;
+  if(EXTRA_THEMES.some(t=>t.id===id)) applyBuiltInTheme(id, {applyExtras:false});
+  else applyBuiltInTheme(resolveBaseMode()); // тему убрали из json — откат на базовую
+}
 
 function loadExtraThemes(){
   fetch('/json/themesFILE', {cache:'no-store'})
     .then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); })
     .then(text=>{
       const tr = (text||'').trim();
-      if(!tr) return; // пустой файл — дополнительных тем нет
+      if(!tr){ settlePendingExtraTheme(); return; } // пустой файл — дополнительных тем нет
       const raw = JSON.parse(tr);
       if(!Array.isArray(raw)) return;
       const parsed = [];
@@ -1866,16 +1908,37 @@ function loadExtraThemes(){
           });
         }
       });
-      if(!parsed.length) return;
+      if(!parsed.length){ settlePendingExtraTheme(); return; }
       EXTRA_THEMES = parsed;
       buildThemePresets();
-      /* Если активная тема — одна из свежезагруженных, применяем её сразу же после загрузки */
-      if(EXTRA_THEMES.some(t=>t.id===activeThemeId)) applyBuiltInTheme(activeThemeId);
+      /* Если активная тема — одна из свежезагруженных, применяем её сразу же после загрузки.
+         applyExtras:false — на обычной перезагрузке НЕ перезаписываем фигуры фона и настройки
+         интерфейса, которые уже лежат в localStorage (иначе правки пользователя терялись бы). */
+      if(pendingExtraThemeId) settlePendingExtraTheme();
+      else if(EXTRA_THEMES.some(t=>t.id===activeThemeId)) applyBuiltInTheme(activeThemeId, {applyExtras:false});
     })
     .catch(()=>{ /* файла нет или он битый — молча остаёмся только со встроенными темами */ });
 }
 
-let activeThemeId = sGet('isr-theme-id') || 'light';
+/* Ивент «Хэллоуин»: каждый год с 7 октября по 10 ноября включительно.
+   В сезон тема стоит ПЕРВОЙ в списке и включается по умолчанию. Вне сезона она возвращается
+   на своё обычное место в списке и сама больше не включается (если её не включили вручную). */
+const HALLOWEEN_ID = 'halloween';
+const HALLOWEEN_FROM = { month: 10, day: 7 };   // 7 октября
+const HALLOWEEN_TO   = { month: 11, day: 10 };  // 10 ноября (включительно)
+function isHalloweenSeason(d = new Date()){
+  const m = d.getMonth() + 1, day = d.getDate();
+  const afterStart = m > HALLOWEEN_FROM.month || (m === HALLOWEEN_FROM.month && day >= HALLOWEEN_FROM.day);
+  const beforeEnd  = m < HALLOWEEN_TO.month   || (m === HALLOWEEN_TO.month   && day <= HALLOWEEN_TO.day);
+  return afterStart && beforeEnd;
+}
+const HALLOWEEN_ACTIVE = isHalloweenSeason();
+const HALLOWEEN_SEEN_KEY = 'isr-event-halloween-' + new Date().getFullYear();
+const HAD_STORED_THEME = sGet('isr-theme-id') !== null;
+
+let activeThemeId = sGet('isr-theme-id') || (HALLOWEEN_ACTIVE ? HALLOWEEN_ID : 'light');
+/* id темы из json/themesFILE, которая выбрана, но файл ещё не загрузился */
+let pendingExtraThemeId = null;
 let baseMode = sGet('isr-base-mode') || 'system';
 let customThemeVars = sGetJSON('isr-custom-vars', BUILT_IN_THEMES[0].vars);
 
@@ -1905,16 +1968,41 @@ function clearCustomVarsFromDOM(){
   root.style.removeProperty('--accent-deep');
 }
 
+/* Живые значения цветовых переменных (для тем, чьи цвета заданы в css-файле). */
+function readLiveThemeVars(){
+  const v = {};
+  COLOR_FIELDS.forEach(f=>{ v[f.var] = cssColorToHex(getComputedVar(f.var)); });
+  return v;
+}
+
+/* opts.applyExtras:false — не трогать фигуры/layout официальной темы (обычная перезагрузка).
+   opts.transient:true — временно показать тему, НЕ записывая выбор в localStorage. */
 function applyBuiltInTheme(id, opts={}){
   const th = allBuiltInThemes().find(t=>t.id===id);
   if(!th) return;
-  document.documentElement.removeAttribute('data-theme');
+  const root = document.documentElement;
   clearCustomVarsFromDOM();
-  applyVarsToDOM(th.vars);
-  activeThemeId = id;
-  sSet('isr-theme-id', id);
+  if(th.cssTheme){
+    /* Тема из отдельного css-файла (css/halloween.css): ставим data-theme, а цвета и декор
+       приходят из стилей. Инлайн-переменные выше уже очищены, чтобы они не перебивали css. */
+    root.setAttribute('data-theme', th.id);
+    th.vars = readLiveThemeVars();
+  } else {
+    /* Тема из json/themesFILE с кодом, созданным при включённом Хэллоуине, тоже несёт декор. */
+    if(th.layout && th.layout.halloween) root.setAttribute('data-theme', HALLOWEEN_ID);
+    else root.removeAttribute('data-theme');
+    applyVarsToDOM(th.vars);
+  }
+  if(!opts.transient){
+    activeThemeId = id;
+    pendingExtraThemeId = null;
+    sSet('isr-theme-id', id);
+    /* Любой осознанный выбор темы снимает пометку «Хэллоуин включён автоматически». */
+    if(!opts.keepAuto) sSet('isr-halloween-auto','0');
+  }
   updatePresetUI();
   syncCustomEditorInputs(th.vars);
+  if(opts.transient) return;
   applyThemeFont(th.font);
 
   /* У встроенных тем (BUILT_IN_THEMES, заданных прямо в коде) поле stripe жёстко
@@ -1934,12 +2022,18 @@ function applyBuiltInTheme(id, opts={}){
      набор настроек интерфейса и фигур фона — так же, как это уже умеют сохранённые
      пользователем темы. Применяем их тем же путём, что и applySavedTheme. */
   const isExtra = EXTRA_THEMES.some(t=>t.id===id);
+  if(isExtra){
+    /* Кэш цветов официальной темы: при следующей загрузке страницы применяем их мгновенно,
+       не дожидаясь json/themesFILE (нет вспышки светлой темы и нет сброса). */
+    sSetJSON('isr-extra-theme-cache', { id, vars: th.vars, font: th.font, hw: !!(th.layout && th.layout.halloween) });
+  }
   if(isExtra && opts.applyExtras!==false){
     if(th.layout){
       layoutRadius = th.layout.radius ?? 0;
       layoutScale = th.layout.scale ?? 100;
       layoutStripe = th.layout.stripe || 'on';
       layoutNoise = th.layout.noise || 'on';
+      if(th.layout.halloween){ layoutGraveyard = th.layout.hwGraveyardOff ? 'off' : 'on'; sSet('isr-hw-graveyard', layoutGraveyard); }
       sSet('isr-radius', layoutRadius);
       sSet('isr-scale', layoutScale);
       sSet('isr-stripe', layoutStripe);
@@ -1953,8 +2047,15 @@ function applyBuiltInTheme(id, opts={}){
   }
 }
 
+/* opts.hw — оставить хэллоуинский декор (паутина, мыши, кладбище) поверх своих цветов.
+   Если не указано, наследуем текущее состояние: правишь тему, пока включён Хэллоуин —
+   декор остаётся; правишь с другой темы — его нет. Цвета при этом берутся из инлайн-переменных
+   (они сильнее css-темы), а декор — из css/halloween.css по data-theme="halloween". */
 function applyCustomTheme(vars, id='custom', opts={}){
-  document.documentElement.removeAttribute('data-theme');
+  const root = document.documentElement;
+  const hw = (opts.hw !== undefined) ? !!opts.hw : (root.getAttribute('data-theme')===HALLOWEEN_ID);
+  if(hw) root.setAttribute('data-theme', HALLOWEEN_ID); else root.removeAttribute('data-theme');
+  if(id==='custom') sSet('isr-custom-hw', hw ? '1' : '0');
   applyVarsToDOM(vars);
   customThemeVars = {...vars};
   activeThemeId = id;
@@ -2001,7 +2102,7 @@ function applySavedTheme(name){
     const saved = sGetJSON('isr-saved-themes', []);
     const th = saved.find(t=>t.name===name);
     if(!th) return;
-    applyCustomTheme(th.vars, 'saved:'+name);
+    applyCustomTheme(th.vars, 'saved:'+name, {hw:!!th.hw});
     if(th.font){
       if(sGet('isr-font-locked')!=='1') applyThemeFont(th.font);
     }
@@ -2035,12 +2136,35 @@ function resolveBaseMode(){
 }
 
 function initTheme(){
+  /* Ивент «Хэллоуин» (7 октября – 10 ноября).
+     В сезон: новым посетителям тема включается по умолчанию, а тем, кто сидит на стандартных
+     светлой/тёмной, один раз за год переключается на неё. Свои/сохранённые/другие официальные
+     темы не трогаем. Автоматически включённый Хэллоуин помечается флагом isr-halloween-auto.
+     Вне сезона: если Хэллоуин остался включённым автоматически — возвращаем базовую тему;
+     если пользователь выбрал его сам, он волен оставить. */
+  if(HALLOWEEN_ACTIVE){
+    if(!HAD_STORED_THEME){
+      sSet('isr-halloween-auto','1');
+      sSet(HALLOWEEN_SEEN_KEY,'1');
+    } else if(sGet(HALLOWEEN_SEEN_KEY)!=='1'){
+      sSet(HALLOWEEN_SEEN_KEY,'1');
+      if(activeThemeId==='light' || activeThemeId==='dark'){
+        activeThemeId = HALLOWEEN_ID;
+        sSet('isr-theme-id', HALLOWEEN_ID);
+        sSet('isr-halloween-auto','1');
+      }
+    }
+  } else if(activeThemeId===HALLOWEEN_ID && sGet('isr-halloween-auto')==='1'){
+    activeThemeId = resolveBaseMode();
+    sSet('isr-theme-id', activeThemeId);
+    sSet('isr-halloween-auto','0');
+  }
   const saved = sGetJSON('isr-saved-themes',[]);
   if(activeThemeId && activeThemeId.startsWith('saved:')){
     const name = activeThemeId.replace('saved:','');
     const th = saved.find(t=>t.name===name);
     if(th){
-      applyCustomTheme(th.vars,'saved:'+name);
+      applyCustomTheme(th.vars,'saved:'+name,{hw:!!th.hw});
       if(th.font && sGet('isr-font-locked')!=='1') applyThemeFont(th.font);
       /* При обычной загрузке страницы фигуры темы уже лежат в isr-bgfx-shapes
          (bgfxPersist сохраняет их сразу при применении/сохранении), поэтому
@@ -2049,15 +2173,30 @@ function initTheme(){
     }
   }
   if(activeThemeId==='custom'){
-    applyCustomTheme(customThemeVars,'custom'); return;
+    applyCustomTheme(customThemeVars,'custom',{hw: sGet('isr-custom-hw')==='1'}); return;
   }
   const builtIn = allBuiltInThemes().find(t=>t.id===activeThemeId);
-  if(builtIn){ applyBuiltInTheme(activeThemeId); return; }
-  applyBuiltInTheme(resolveBaseMode());
+  if(builtIn){ applyBuiltInTheme(activeThemeId, {keepAuto:true}); return; }
+
+  /* Неизвестный id — скорее всего тема из json/themesFILE, которая ещё не загрузилась.
+     НЕ сбрасываем выбор: показываем закэшированные цвета (или временно базовую тему)
+     и ждём загрузки файла — см. settlePendingExtraTheme(). */
+  pendingExtraThemeId = activeThemeId;
+  const cache = sGetJSON('isr-extra-theme-cache', null);
+  if(cache && cache.id===activeThemeId && cache.vars){
+    if(cache.hw) document.documentElement.setAttribute('data-theme', HALLOWEEN_ID);
+    else document.documentElement.removeAttribute('data-theme');
+    clearCustomVarsFromDOM();
+    applyVarsToDOM(cache.vars);
+  } else {
+    applyBuiltInTheme(resolveBaseMode(), {transient:true});
+  }
 }
 
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{
-  if(baseMode==='system' && !activeThemeId.startsWith('saved:') && activeThemeId!=='custom'){
+  /* Смена системной темы переключает только базовые light/dark — выбранные пользователем
+     официальные темы (в т.ч. «Хэллоуин») она сбрасывать не должна. */
+  if(baseMode==='system' && (activeThemeId==='light' || activeThemeId==='dark')){
     applyBuiltInTheme(resolveBaseMode());
   }
 });
@@ -2072,11 +2211,12 @@ function buildThemePresets(){
     const btn = document.createElement('button');
     btn.className = 'theme-preset'+(activeThemeId===th.id?' active':'');
     btn.dataset.id = th.id;
+    const pv = th.preview || { paper:th.vars['--paper'], accent:th.vars['--yellow'], ink:th.vars['--ink'] };
     btn.innerHTML = `
       <div class="preview">
-        <div class="preview-bg" style="background:${th.vars['--paper']}"></div>
-        <div class="preview-accent" style="background:${th.vars['--yellow']}"></div>
-        <div class="preview-text" style="background:${th.vars['--ink']}"></div>
+        <div class="preview-bg" style="background:${pv.paper}"></div>
+        <div class="preview-accent" style="background:${pv.accent}"></div>
+        <div class="preview-text" style="background:${pv.ink}"></div>
       </div>
       <div class="pname">${th.name}</div>`;
     btn.addEventListener('click',()=>{
@@ -2266,7 +2406,8 @@ document.getElementById('saveCustomBtn').addEventListener('click',()=>{
     vars:{...customThemeVars},
     font: (typeof layoutFont!=='undefined'?layoutFont:null),
     shapes: shapesNow,
-    bgEnabled: bgEnabledNow
+    bgEnabled: bgEnabledNow,
+    hw: document.documentElement.getAttribute('data-theme')===HALLOWEEN_ID
   });
   sSetJSON('isr-saved-themes',saved);
   buildSavedThemes();
@@ -2324,6 +2465,11 @@ function encodeThemeCode(vars){
   flags |= (stripe==='on' ? 1:0) << 3;
   flags |= (noise==='on' ? 1:0) << 4;
   flags |= (bgEnabled==='on' ? 1:0) << 5;
+  /* бит 6 — включён хэллоуинский декор на момент создания кода; бит 7 — кладбище скрыто.
+     Старые версии декодера эти биты просто игнорируют, поэтому формат остаётся ISR3. */
+  const hwOn = document.documentElement.getAttribute('data-theme')===HALLOWEEN_ID;
+  flags |= (hwOn ? 1:0) << 6;
+  flags |= ((hwOn && layoutGraveyard==='off') ? 1:0) << 7;
   bytes.push(flags);
 
   bytes.push(clampByte(shapes.length));
@@ -2377,6 +2523,8 @@ function decodeThemeCodeV2(b64part){
     const stripe = ((flags>>3) & 1) ? 'on' : 'off';
     const noise = ((flags>>4) & 1) ? 'on' : 'off';
     const bgEnabled = ((flags>>5) & 1) ? 'on' : 'off';
+    const halloween = !!((flags>>6) & 1);
+    const hwGraveyardOff = !!((flags>>7) & 1);
     const font = THEME_CODE_FONTS[fontIdx] || THEME_CODE_FONTS[0];
 
     const shapeCount = buf[i++];
@@ -2397,7 +2545,7 @@ function decodeThemeCodeV2(b64part){
 
     return {
       vars,
-      layout: { radius, scale, font, fontLocked, stripe, noise },
+      layout: { radius, scale, font, fontLocked, stripe, noise, halloween, hwGraveyardOff },
       bg: { enabled: bgEnabled, shapes }
     };
   } catch(e){ return null; }
@@ -2423,6 +2571,8 @@ function decodeThemeCodeV3(b64part){
     const stripe = ((flags>>3) & 1) ? 'on' : 'off';
     const noise = ((flags>>4) & 1) ? 'on' : 'off';
     const bgEnabled = ((flags>>5) & 1) ? 'on' : 'off';
+    const halloween = !!((flags>>6) & 1);
+    const hwGraveyardOff = !!((flags>>7) & 1);
     const font = THEME_CODE_FONTS[fontIdx] || THEME_CODE_FONTS[0];
 
     const shapeCount = buf[i++];
@@ -2447,7 +2597,7 @@ function decodeThemeCodeV3(b64part){
 
     return {
       vars,
-      layout: { radius, scale, font, fontLocked, stripe, noise },
+      layout: { radius, scale, font, fontLocked, stripe, noise, halloween, hwGraveyardOff },
       bg: { enabled: bgEnabled, shapes }
     };
   } catch(e){ return null; }
@@ -2479,7 +2629,7 @@ document.getElementById('genThemeCodeBtn').addEventListener('click',()=>{
   out.value = code;
   out.select();
   if(navigator.clipboard){
-    navigator.clipboard.writeText(code).then(()=>showToast('Код темы скопирован! (включает интерфейс и фон)')).catch(()=>showToast('Код создан — скопируйте вручную'));
+    navigator.clipboard.writeText(code).then(()=>showToast(document.documentElement.getAttribute('data-theme')===HALLOWEEN_ID ? 'Код темы скопирован! (интерфейс, фон и Хэллоуин-декор)' : 'Код темы скопирован! (включает интерфейс и фон)')).catch(()=>showToast('Код создан — скопируйте вручную'));
   } else {
     showToast('Код создан — скопируйте вручную');
   }
@@ -2490,10 +2640,12 @@ document.getElementById('importThemeCodeBtn').addEventListener('click',()=>{
   if(!decoded){ showToast('Код темы недействителен'); return; }
   const { vars, layout, bg } = decoded;
   customThemeVars = {...vars};
-  applyCustomTheme(vars,'custom');
+  applyCustomTheme(vars,'custom',{hw: !!(layout && layout.halloween)});
   syncCustomEditorInputs(vars);
 
   if(layout){
+    layoutGraveyard = (layout.halloween && layout.hwGraveyardOff) ? 'off' : 'on';
+    sSet('isr-hw-graveyard', layoutGraveyard);
     layoutRadius = layout.radius ?? 0;
     layoutScale = layout.scale ?? 100;
     layoutStripe = layout.stripe || 'on';
@@ -2578,6 +2730,7 @@ let layoutScale = parseInt(sGet('isr-scale')||'100');
 let layoutFont = sGet('isr-font')||"'IBM Plex Sans', sans-serif";
 let layoutStripe = sGet('isr-stripe')||'on';
 let layoutNoise = sGet('isr-noise')||'on';
+let layoutGraveyard = sGet('isr-hw-graveyard')||'on'; // «кладбище с тыквами» внизу (тема Хэллоуин)
 
 function applyLayout(){
   document.documentElement.style.setProperty('--radius', layoutRadius+'px');
@@ -2587,6 +2740,7 @@ function applyLayout(){
   const stripe = document.querySelector('.stripe');
   if(stripe) stripe.style.display = layoutStripe==='off'?'none':'';
   document.body.style.setProperty('--noise-opacity', layoutNoise==='off'?'0':'0.05');
+  document.documentElement.setAttribute('data-hw-graveyard', layoutGraveyard);
 }
 
 function syncLayoutUI(){
@@ -2599,6 +2753,10 @@ function syncLayoutUI(){
   document.querySelectorAll('#fontPicker .font-chip').forEach(c=>c.classList.toggle('active',c.dataset.font===layoutFont));
   document.querySelectorAll('#stripeGroup .seg-btn').forEach(b=>b.classList.toggle('active',b.dataset.value===layoutStripe));
   document.querySelectorAll('#noiseGroup .seg-btn').forEach(b=>b.classList.toggle('active',b.dataset.value===layoutNoise));
+  document.querySelectorAll('#graveyardGroup .seg-btn').forEach(b=>b.classList.toggle('active',b.dataset.value===layoutGraveyard));
+  /* Настройка видна только пока включена тема Хэллоуин */
+  const gy = document.getElementById('graveyardSetting');
+  if(gy) gy.style.display = document.documentElement.getAttribute('data-theme')===HALLOWEEN_ID ? '' : 'none';
 }
 
 document.getElementById('radiusSlider').addEventListener('input',e=>{
@@ -2642,10 +2800,16 @@ document.getElementById('noiseGroup').addEventListener('click',e=>{
   document.body.style.setProperty('--noise-opacity',layoutNoise==='off'?'0':'0.05');
   document.querySelectorAll('#noiseGroup .seg-btn').forEach(s=>s.classList.toggle('active',s===b));
 });
+document.getElementById('graveyardGroup').addEventListener('click',e=>{
+  const b=e.target.closest('.seg-btn'); if(!b) return;
+  layoutGraveyard=b.dataset.value; sSet('isr-hw-graveyard',layoutGraveyard);
+  document.documentElement.setAttribute('data-hw-graveyard', layoutGraveyard);
+  document.querySelectorAll('#graveyardGroup .seg-btn').forEach(s=>s.classList.toggle('active',s===b));
+});
 document.getElementById('resetLayoutBtn').addEventListener('click',()=>{
   if(!confirm('Сбросить все настройки интерфейса?')) return;
-  layoutRadius=0; layoutScale=100; layoutFont="'IBM Plex Sans',sans-serif"; layoutStripe='on'; layoutNoise='on';
-  ['isr-radius','isr-scale','isr-font','isr-stripe','isr-noise'].forEach(sDel);
+  layoutRadius=0; layoutScale=100; layoutFont="'IBM Plex Sans',sans-serif"; layoutStripe='on'; layoutNoise='on'; layoutGraveyard='on';
+  ['isr-radius','isr-scale','isr-font','isr-stripe','isr-noise','isr-hw-graveyard'].forEach(sDel);
   applyLayout(); syncLayoutUI(); showToast('Сброшено к умолчаниям');
 });
 

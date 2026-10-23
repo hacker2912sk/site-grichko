@@ -5,13 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Технические работы · ИСР</title>
 <link id="favicon" rel="icon" type="image/png">
-<script>
-  fetch('icon.txt')
-    .then(res => res.text())
-    .then(base64 => {
-      document.getElementById('favicon').href = 'data:image/png;base64,' + base64.trim();
-    });
-</script>
+<link rel="icon" type="image/png" href="icon.png">
 <meta name="robots" content="noindex">
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800;900&family=Oswald:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -195,9 +189,11 @@
     Object.keys(vars).forEach(function(k){ root.style.setProperty(k, vars[k]); });
   }
 
-  var activeThemeId = get('isr-theme-id') || 'light';
+  var activeThemeId = get('isr-theme-id') || (Date.now() < new Date(2026, 10, 3).getTime() ? 'halloween' : 'light');
 
   function applyByActiveId(themesMap){
+    /* Ивентовая тема «Хэллоуин» целиком живёт в css/halloween.css */
+    if (activeThemeId === 'halloween') { document.documentElement.setAttribute('data-theme', 'halloween'); return true; }
     if (activeThemeId.indexOf('saved:') === 0) {
       var name = activeThemeId.replace('saved:', '');
       var saved = getJSON('isr-saved-themes', []);
@@ -240,6 +236,7 @@
     .catch(function(){});
 })();
 </script>
+<link rel="stylesheet" href="/css/halloween.css">
 </head>
 <body>
 <div class="stripe"></div>
